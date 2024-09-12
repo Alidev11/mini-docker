@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -15,14 +14,15 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
-func FetchImg() string {
-	imageRef := "docker.io/library/hello-world:latest"
+func FetchImg(imageName string) string {
+	imageRef := "docker.io/library/" + imageName + ":latest"
 
 	// Parse the image reference
 	ref, err := name.ParseReference(imageRef)
-	// ref: is an object name.Reference, value -> docker.io/library/hello-world:latest
 
 	if err != nil {
 		log.Fatalf("Failed to parse image ref: %v", err)
@@ -35,9 +35,7 @@ func FetchImg() string {
 		log.Fatalf("Failed to fetch image: %v", err)
 	}
 
-	// Create a file "hello-world.tar" and write the image in to it
-
-	outFile, err := os.Create("hello-world.tar")
+	outFile, err := os.Create(imageName + ".tar")
 	if err != nil {
 		log.Fatalf("Failed to save image as tar: %v", err)
 	}
@@ -50,7 +48,7 @@ func FetchImg() string {
 	}
 
 	fmt.Println("Fetch Image Successfully !")
-	return "hello-world.tar"
+	return imageName + ".tar"
 }
 
 func Untar(src, dest string) error {
@@ -183,23 +181,18 @@ func IsDirectoryEmpty(dirPath string) (bool, error) {
 }
 
 func main() {
-	srcFile := FetchImg()
-	outputFile := "./contUntared"
-	
+	imageName := "redis"
+	srcFile := FetchImg(imageName)
+	titleCaser := cases.Title(language.English)
+	outputFile := "./contUntared" + titleCaser.String(imageName)
+
 	if result, err := IsDirectoryEmpty(outputFile); err != nil {
-        // Handle error from IsDirectoryEmpty
-        log.Fatalf("Error checking directory: %v", err)
-    } else if result {
-        // If the directory is not empty, proceed with untarring
-        if err := Untar(srcFile, outputFile); err != nil {
-            log.Fatalf("Failed to untar OCI: %v", err)
-        }
-    }
-
-	cmd := exec.Command(outputFile + "/hello")
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Run()
-
+		// Handle error from IsDirectoryEmpty
+		log.Fatalf("Error checking directory: %v", err)
+	} else if result {
+		// If the directory is not empty, proceed with untarring
+		if err := Untar(srcFile, outputFile); err != nil {
+			log.Fatalf("Failed to untar OCI: %v", err)
+		}
+	}
 }
