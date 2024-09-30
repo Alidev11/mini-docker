@@ -1,2 +1,2 @@
-redis/*
-redis.tar
+redis/
+*.tar
